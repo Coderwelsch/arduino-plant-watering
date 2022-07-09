@@ -1,16 +1,28 @@
 #define MIN_MOISTURE_PERCENTAGE 80
+
+// despite the length of your pump water tubes you should
+// test the optimum delay the water needs to travel to your planty
 #define PUMP_TIME_OFFSET 2000
 #define PUMP_DURATION 2000
 
 #define MIN_MOISTURE_VAL 346
 #define MAX_MOISTURE_VAL 540
 
-int SETS_COUNT = 2;
+// count of settings despite to your 
+// hardware setup / connected pumps
+const int SETS_COUNT = 1;
 
-int FLOWERING_SETS [2][3] = { 
-    // Moisture Sensor Data Pin | Relays Input Pin | (Initial) Moisture Value
-    {  A0,                        13,                0                      }, 
-    {  A1,                        12,                0                      }, 
+struct ConfigStruct {
+    char *displayName;
+    int moistureSensorPin;
+    int relayInputPin;
+    int moistureValue;
+};
+
+// your flower config
+struct ConfigStruct FLOWERING_SETS[SETS_COUNT] = { 
+    { "Tomato #1", A0, 13, 0 } /*, 
+    { "Tomato #2", A1, 12, 0 } */
 };
 
 
@@ -18,7 +30,7 @@ void setup() {
     Serial.begin(9600);
   
     for (int i = 0; i < SETS_COUNT; ++i ) {
-        int pumpPin = FLOWERING_SETS[i][1];
+        int pumpPin = FLOWERING_SETS[i].relayInputPin;
         pinMode(pumpPin, OUTPUT);
     }
 }
@@ -28,38 +40,39 @@ void loop() {
     readValues();
     watering();
 
-    //Serial.println(String(FLOWERING_SETS[0][2]) + " %");
-
     delay(750);
-    
-    // digitalWrite(PIN_PUMP_1, HIGH);  // Schaltet einpum
-    // delay(1000);
-
-    // digitalWrite(PIN_PUMP_1, LOW);   // Schaltet aus
-    // delay(1000); 
 }
 
 void watering () {
     for (int i = 0; i < SETS_COUNT; ++i ) {
-        int moistureValue = FLOWERING_SETS[i][2];
-        int pumpPin = FLOWERING_SETS[i][2];
-    
-        if (moistureValue < MIN_MOISTURE_PERCENTAGE) {
-            float pumpValueOffset = float(MIN_MOISTURE_PERCENTAGE) / float(moistureValue);
-            int computedPumpTime = PUMP_TIME_OFFSET + PUMP_DURATION * pumpValueOffset;
-            
-            Serial.println(
-                "Watering set #" + String(i) + 
-                ", Moisture: " + String(moistureValue) + " %" +
-                ", Duration: " + String(computedPumpTime) + " s"
-            );
-            
-            setPumpState(pumpPin, true);
-            delay(computedPumpTime);
+        wateringSet(i);
+    }
+}
 
-            Serial.println("Stop set #" + String(i));
-            setPumpState(pumpPin, false);
-        }
+void wateringSet (int setIndex) {
+    int pumpPin = FLOWERING_SETS[setIndex].relayInputPin;
+    int moistureValue = FLOWERING_SETS[setIndex].moistureValue;
+    String setName = String(FLOWERING_SETS[setIndex].displayName);
+
+    // when measured moisture value felt below the
+    // "dry" zone -> pump some water
+    if (moistureValue < MIN_MOISTURE_PERCENTAGE) {
+        float pumpValueOffset = float(MIN_MOISTURE_PERCENTAGE) / float(moistureValue);
+        int computedPumpTime = PUMP_TIME_OFFSET + PUMP_DURATION * pumpValueOffset;
+
+        float timeInSecs = computedPumpTime / 1000;
+        
+        Serial.println(
+            "Watering set \"" + setName + "\"" + 
+            ", Moisture: " + String(moistureValue) + " %" +
+            ", Duration: " + String(timeInSecs) + " s"
+        );
+        
+        setPumpState(pumpPin, true);
+        delay(computedPumpTime);
+
+        Serial.println("Stop set " + setName);
+        setPumpState(pumpPin, false);
     }
 }
 
@@ -73,10 +86,10 @@ void setPumpState (int pin, bool active) {
 
 void readValues () {
     for (int i = 0; i < SETS_COUNT; ++i ) {
-        int moisturePin = FLOWERING_SETS[i][0];
+        int moisturePin = FLOWERING_SETS[i].moistureSensorPin;
         
         // saves moisture value
-        FLOWERING_SETS[i][2] = getMoisturePercentage(moisturePin);
+        FLOWERING_SETS[i].moistureValue = getMoisturePercentage(moisturePin);
     }
 }
 
