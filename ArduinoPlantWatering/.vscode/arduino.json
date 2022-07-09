@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "AutoWateringPumpRelay.ino",
+    "port": "/dev/tty.usbmodem146101"
+}
