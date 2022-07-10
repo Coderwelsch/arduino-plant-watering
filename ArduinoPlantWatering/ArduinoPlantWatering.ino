@@ -1,7 +1,7 @@
-#define MIN_MOISTURE_PERCENTAGE 80
+#define MIN_MOISTURE_PERCENTAGE 60
 
 #define MIN_MOISTURE_VAL 346
-#define MAX_MOISTURE_VAL 540
+#define MAX_MOISTURE_VAL 640
 
 // count of settings despite to your 
 // hardware setup / connected pumps
