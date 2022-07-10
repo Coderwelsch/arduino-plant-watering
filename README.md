@@ -1,3 +1,6 @@
+
+![Setup](doc/assets/IMG_6031.JPG)
+
 # Arduino Plant Watering System
 
 This system tries to automatically watering flowerpots only when it’s necessary.
@@ -8,7 +11,10 @@ This system tries to automatically watering flowerpots only when it’s necessar
 
 #### Hardware
 
-Coming soon …
+- Moisture Sensor 1.2
+- Arduino Uno
+- Relays (for controlling pumps)
+- Water Pump
 
 #### Arduino Libraries
 
