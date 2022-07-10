@@ -40,7 +40,7 @@ void loop() {
     readValues();
     watering();
 
-    delay(750);
+    delay(10000);
 }
 
 void watering () {
@@ -76,14 +76,16 @@ void wateringSet (int setIndex) {
 
         Serial.println("Stop set " + setName);
         setPumpState(pumpPin, false);
+    } else {
+        Serial.println("Do nothing " + setName + ", Moisture: " + moistureValue);
     }
 }
 
 void setPumpState (int pin, bool active) {
     if (active) {
-        //digitalWrite(pin, HIGH);
+        digitalWrite(pin, HIGH);
     } else {
-        //digitalWrite(pin, LOW);
+        digitalWrite(pin, LOW);
     }
 }
 
