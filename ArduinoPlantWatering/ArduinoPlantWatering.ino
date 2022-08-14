@@ -1,5 +1,8 @@
 #define MIN_MOISTURE_PERCENTAGE 60
 
+#define MAX_WATERING_TIME 12000
+#define NEXT_CHECK_DELAY 3600000
+
 #define MIN_MOISTURE_VAL 346
 #define MAX_MOISTURE_VAL 640
 
@@ -21,17 +24,21 @@ struct ConfigStruct {
 
 // your flower config
 struct ConfigStruct FLOWER_SET[SETS_COUNT] = { 
-    { "Tomato #1", A0, 13, 0, 2000, 4000 } /*,
+    { "Tomato #1", A0, 13, 0, 2000, 6000 } /*,
     { "Tomato #2", A1, 12, 0, 2000, 2000 } */
 };
 
 
 void setup() {
     Serial.begin(9600);
-  
+
+    // init pump pin modes 
     for (int i = 0; i < SETS_COUNT; ++i ) {
         int pumpPin = FLOWER_SET[i].relayInputPin;
         pinMode(pumpPin, OUTPUT);
+
+        // just to be sure
+        // setPumpState(pumpPin, false);
     }
 }
 
@@ -40,7 +47,8 @@ void loop() {
     readValues();
     watering();
 
-    delay(10000);
+    Serial.println(":sleeping_accommodation: Sleep for " + String(NEXT_CHECK_DELAY / 3600000) + " hour(s) ...");
+    delay(NEXT_CHECK_DELAY);
 }
 
 void watering () {
@@ -61,12 +69,17 @@ void wateringSet (int setIndex) {
     // "dry" zone -> pump some water
     if (moistureValue < MIN_MOISTURE_PERCENTAGE) {
         float pumpValueOffset = (float(MIN_MOISTURE_PERCENTAGE) / 100) * (float(100 - moistureValue) / 100) * 2000;
-        int computedPumpTime = pumpTimeOffset + pumpDuration + pumpValueOffset;
+        
+        int computedPumpTime = min(
+            MAX_WATERING_TIME, 
+            pumpTimeOffset + pumpDuration + pumpValueOffset
+        );
+        
 
         float timeInSecs = computedPumpTime / 1000;
         
         Serial.println(
-            "Watering set «" + setName + "»" +
+            ":potable_water: Watering set «" + setName + "»" +
             ", Moisture: " + String(moistureValue) + " %" +
             ", Duration: " + String(timeInSecs) + " s"
         );
@@ -74,18 +87,22 @@ void wateringSet (int setIndex) {
         setPumpState(pumpPin, true);
         delay(computedPumpTime);
 
-        Serial.println("Stop set " + setName);
-        setPumpState(pumpPin, false);
+        Serial.println(":ok: Watered set «" + setName + "»");
     } else {
-        Serial.println("Do nothing " + setName + ", Moisture: " + moistureValue);
+        Serial.println(":ok: Do nothing for set " + setName + ", Moisture: " + moistureValue);
     }
+
+    // deactive pump pin every time
+    setPumpState(pumpPin, false);
 }
 
 void setPumpState (int pin, bool active) {
     if (active) {
-        digitalWrite(pin, HIGH);
-    } else {
+        // Serial.println("Activate Pump #" + String(pin));
         digitalWrite(pin, LOW);
+    } else {
+        // Serial.println("Deactivate Pump #" + String(pin));
+        digitalWrite(pin, HIGH);
     }
 }
 
