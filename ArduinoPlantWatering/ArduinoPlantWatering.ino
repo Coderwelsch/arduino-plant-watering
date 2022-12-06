@@ -1,5 +1,12 @@
 #include "config.h";
 
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+
+
 // overwrite default settings (found in config.h)
 // #define MIN_MOISTURE_PERCENTAGE 60...
 
@@ -9,9 +16,23 @@ const int SETS_COUNT = 1;
 
 // your flower config
 struct ConfigStruct FLOWER_SET[SETS_COUNT] = { 
-    { "Tomato #1", A0, 13, 0, 2000, 6000, 346, 640 }
+    { "Tomato #1", A0, 13, 0, 2000, 6000, 200, 640 }
 };
 
+
+void displayText (String text, int line = 0) {
+    lcd.setCursor(0, line);
+    lcd.print("                ");
+    lcd.setCursor(0, line);
+    lcd.print(text);
+}
+
+void clearText() {
+    lcd.setCursor(0, 0);
+    lcd.print("                ");
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
+}
 
 void setupPumpPins (struct ConfigStruct set[], int count) {
   // init pump pin modes
@@ -80,6 +101,10 @@ void wateringSet (ConfigStruct set) {
       ", Duration: " + String(timeInSecs) + " s"
     );
 
+    clearText();
+    displayText("Watering " + String(set.displayName), 0);
+    displayText("" + String(moistureValue) + " %, Time: " + String(computedPumpTime / 1000) + "s", 1);
+
     setPumpState(pumpPin, true);
     delay(computedPumpTime);
 
@@ -90,6 +115,14 @@ void wateringSet (ConfigStruct set) {
 
   // deactive pump pin every time
   setPumpState(pumpPin, false);
+
+  int newMoistureVal = readMoistureValue(set);
+  
+  clearText();
+  displayText("Checked " + String(set.displayName), 0);
+  displayText("Moisture: " + String(newMoistureVal) + " %", 1);
+  
+  delay(2000);
 }
 
 void setPumpState (int pin, bool active) {
@@ -104,28 +137,58 @@ void setPumpState (int pin, bool active) {
 
 void readMoistureValues (ConfigStruct set[], int count) {
   for (int i = 0; i < count; ++i ) {
-    int moisturePin = set[i].moistureSensorPin;
-    int min = set[i].minMoistureSensorVal;
-    int max = set[i].maxMoistureSensorVal;
-
-    // saves moisture value
-    set[i].moistureValue = getMoisturePercentage(moisturePin, min, max);
+    readMoistureValue(set[i]);
   }
 }
 
+int readMoistureValue (ConfigStruct set) {
+    int moisturePin = set.moistureSensorPin;
+    int min = set.minMoistureSensorVal;
+    int max = set.maxMoistureSensorVal;
+
+    // saves moisture value
+    set.moistureValue = getMoisturePercentage(moisturePin, min, max);
+    return set.moistureValue;
+}
 
 void setup() {
+    // init lcd
+    lcd.init();
+    lcd.backlight(); 
+
+    delay(1000);
+
+    clearText();
+    displayText("Init ...", 0);
+
     Serial.begin(9600);
 
     // init pump pin modes 
     setupPumpPins(FLOWER_SET, SETS_COUNT);
+
+    delay(3000);
+
+    clearText();
+    displayText("Done.", 0);
+    delay(2000);
 }
 
  
 void loop() {
+    clearText();
+    displayText("Reading moisture", 0);
+    displayText("values ...", 1);
+    
     readMoistureValues(FLOWER_SET, SETS_COUNT);
+
+    delay(2000);
+    
     watering(FLOWER_SET, SETS_COUNT);
 
     Serial.println(":sleeping_accommodation: Sleep for " + String(NEXT_CHECK_DELAY / 3600000) + " hour(s) ...");
+
+    clearText();
+    displayText("Sleep for " + String(NEXT_CHECK_DELAY / 1000) + "s ...");
+    
     delay(NEXT_CHECK_DELAY);
 }
