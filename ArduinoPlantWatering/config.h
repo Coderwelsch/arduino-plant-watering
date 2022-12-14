@@ -10,6 +10,7 @@ struct ConfigStruct {
     int moistureSensorPin;
     int relayInputPin;
     int moistureValue;
+    unsigned long wateredLastTime;
     // despite the length of your pump water tubes you should
     // test the optimum delay the water needs to travel to your plantie <3
     int pumpTimeOffset;
